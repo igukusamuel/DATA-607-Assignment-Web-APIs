@@ -1,0 +1,90 @@
+---
+title: "Assignment Web APIs"
+author: "Samuel I Kigamba"
+date: "October 27, 2019"
+output:
+  pdf_document:
+    extra_dependencies:
+    - geometry
+    - multicol
+    - multirow
+    - xcolor
+  html_document:
+    df_print: paged
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+The New York Times web site provides a rich set of APIs, as described here: https://developer.nytimes.com/apis
+You will need to start by signing up for an API key.
+
+Your task is to choose one of the New York Times APIs, construct an interface in R to read in the JSON data, and
+transform it into an R DataFrame.
+
+Load all the relevant libraries (install packages if none exists)
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+library(stringr)
+library(httr)
+library(jsonlite)
+library(tidyr)
+```
+
+```{r, include=FALSE}
+api_key <- "&api-key=wlu8Jq1oRhyXKrF9vK5dBY4OsAE3W9aO"
+```
+
+Define the HTTP request and in this case from the NYT website :
+https://developer.nytimes.com/docs/articlesearch-product/1/routes/articlesearch.json/get
+Follow the instructions in the link provided above to set an API key for use to access the required data
+```{r}
+HTTP_request <- "https://api.nytimes.com/svc/search/v2/articlesearch.json"
+```
+
+Define the search Query in this case to search for business articles
+```{r}
+search_query <- "?q=business"
+```
+
+Apply filters to limit the results to business and finance. The following values are allowed:
+day_of_week, document_type, ingredients, news_desk, pub_month, pub_year, section_name, source, subsection_name, type_of_material
+
+```{r}
+filters <- "&fq=document_type(article)&fq=news_desk(business)&fq=type_of_material(business)&fq=keyword(finance)"
+```
+
+Define the start (01/01/2015) and end dates of today (10/27/2019)
+```{r}
+start_date <- "&begin_date=20150101"
+end_date <- "&end_date=20191027"
+```
+
+Sort by relevance (other allowable parameters include: oldest and newest)
+```{r}
+sort_by <- "&sort=relevance"
+```
+
+Hide API key
+Include your API key generated from the website into a separate line of code and set the include paramenter in the R code block to FALSE
+```{r}
+hidden_API_key <- api_key
+```
+
+```{r}
+business_articles <- fromJSON(paste0(HTTP_request, search_query, filters, start_date, end_date, sort_by, hidden_API_key))
+results <- business_articles$response$docs
+```
+
+Follow the link below to see all the possible parameters
+https://developer.nytimes.com/docs/articlesearch-product/1/routes/articlesearch.json/get
+```{r}
+business_df <- data.frame('Date' = format(as.Date(results$pub_date), "%B %d, %Y"),
+                      'news_desk' = results$news_desk,
+                      #'Headline' = results$headline$main,
+                      'source' = results$source,
+                      'URL' = results$web_url
+                      )
+business_df
+```
